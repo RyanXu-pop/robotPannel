@@ -44,10 +44,10 @@ graph LR
 
 ```mermaid
 graph LR
-    DS["数据源<br/>(MQTT / SSH)"] --> MA["MqttAgent<br/>(Network)"]
-    MA -- "Signal" --> RSH["RobotStateHub<br/>(Store)"]
-    RSH -- "Signal" --> UI["UI Panels<br/>MapView"]
-    UI -- "sig_xxx Signal" --> CTRL["Controllers<br/>(业务逻辑)"]
+    DS["数据源 (MQTT 与 SSH)"] --> MA["MqttAgent（Network 层）"]
+    MA -- "Signal" --> RSH["RobotStateHub（Store 层）"]
+    RSH -- "Signal" --> UI["UI Panels 与 MapView"]
+    UI -- "sig_xxx Signal" --> CTRL["Controllers（业务逻辑）"]
     CTRL -- "publish()" --> MA
 ```
 
@@ -77,18 +77,21 @@ graph LR
 ## 模块职责总览
 
 ### Network 层
+
 | 模块 | 职责 |
 |------|------|
 | `src/network/mqtt_agent.py` | MQTT 连接管理、消息收发、ROS 消息适配 |
 | `src/network/async_ssh_manager.py` | SSH 远程命令执行（底盘/建图/导航启停、地图传输） |
 
 ### Core 层
+
 | 模块 | 职责 |
 |------|------|
 | `src/core/models.py` | 数据模型（RobotPose, MapMetadata）、枚举（SystemState）、应用状态机（AppSystemState）、错误聚合 |
 | `src/core/constants.py` | 全局配置加载、常量定义 |
 
 ### Controller 层
+
 | 模块 | 职责 |
 |------|------|
 | `src/controllers/navigation_controller.py` | 导航目标下发、初始位姿设定 |
@@ -99,11 +102,13 @@ graph LR
 | `src/controllers/pose_recorder.py` | 位姿记录与轨迹导出 |
 
 ### Store 层
+
 | 模块 | 职责 |
 |------|------|
 | `src/ui_v2/robot_state_hub.py` | 集中状态管理（MVVM 中的 ViewModel） |
 
 ### UI 层
+
 | 模块 | 职责 |
 |------|------|
 | `src/ui_v2/main_window.py` | 主窗口布局、信号绑定 |
