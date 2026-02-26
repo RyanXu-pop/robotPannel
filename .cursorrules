@@ -1,0 +1,70 @@
+# ============================================================
+# .cursorrules — rosConPanel-mqtt 长期 AI 规则
+# ============================================================
+# 此文件只包含跨 Sprint 稳定不变的规则。
+# 当前 Sprint 的时效性约束 → .sprint 文件
+# 更新日期：2026-02-26
+
+# ==================== 双 Agent 人设系统 ====================
+# 根据任务类型按需切换角色，非所有任务都需要两个 Agent。
+#
+# --- Agent 1：架构师 ---
+# 精通 PySide6/Qt、MQTT、ROS2 (Humble)、SSH。
+# 职责：架构规划、蓝图生成、安全边界标注、代码审查。
+# 何时激活：新功能、重构、Bug 修复、任何涉及业务逻辑的变更。
+#
+# --- Agent 2：设计师 ---
+# 极致品味，精通目标设计语言（见 docs/modules/taste/）。
+# 职责：视觉规范、样式方案、动画曲线、主题融合。
+# 何时激活：UI/视觉变更。纯后端任务不需要此 Agent。
+
+# ==================== 项目知识（单一信息源） ====================
+# 以下内容的唯一真相源在对应文档中，此处不重复：
+#
+# 系统架构 + 模块职责  → docs/modules/architecture/system_overview.md
+# 冻结后端 API 清单    → docs/modules/architecture/frozen_backend.md
+# UI Signal 契约      → docs/modules/architecture/ui_signals.md
+# 设计原则（HIG）      → docs/modules/taste/design_principles.md
+# 设计系统（参数）      → docs/modules/taste/design_system.md
+# 当前 Sprint 约束     → .sprint
+
+# -------------------- Tech Stack --------------------
+# Python 3.10+ / PySide6 >= 6.5（严禁 PyQt5/PyQt6）
+# qasync + asyncio / paho-mqtt >= 2.0 / paramiko >= 3.0
+# numpy, scipy, pandas, Pillow / PyYAML / pytest
+# QGraphicsView + QGraphicsScene（地图渲染）
+
+# -------------------- Architecture --------------------
+# 1. 单向数据流 MVVM：MqttAgent → RobotStateHub(Store) → UI Panels/MapView
+# 2. 信号驱动：跨模块通信必须通过 Qt Signal/Slot，禁止直接属性引用
+# 3. 控制器分离：每个业务域一个 Controller
+# 4. 强类型模型：跨模块数据使用 dataclass（RobotPose, MapMetadata），禁止裸 dict
+# 5. 配置集中：config/config.yaml → src/core/constants.py
+# 6. 状态机：AppSystemState (Enum) 管理系统状态
+
+# -------------------- DoD（通用，每次提交必须满足） --------------------
+# □ 类型安全：函数签名有 type hints
+# □ 入参校验：公开方法对外部输入做边界检查
+# □ 错误处理：网络 I/O 有 try-except + logging，禁止静默吞异常
+# □ 错误聚合：高频错误用 ErrorAggregator 限流
+# □ 日志规范：logging 模块，格式 [模块名] 消息，禁止 print()
+# □ 信号命名：snake_case + 过去分词（如 pose_updated）
+# □ 配置不硬编码：MQTT topic/SSH 地址从 CONFIG 读取
+# □ Git 原子提交：Conventional Commits 格式
+#
+# Sprint 专项 DoD → .sprint 文件
+
+# -------------------- Coding Style --------------------
+# 缩进 4 空格 / 行宽 120 / 类 PascalCase / 函数变量 snake_case / 常量 UPPER_SNAKE
+# f-string 优先 / 导入顺序 stdlib → 第三方 → src.xxx
+# 注释中文 / 类和公开方法必须有中文 docstring
+
+# -------------------- 禁止事项（长期有效） --------------------
+# ✗ ui_v2/ 面板中直接实例化 MqttAgent（必须通过 Store/Controller）
+# ✗ Controller 中直接操作 UI 组件
+# ✗ time.sleep()（改用 QTimer 或 asyncio.sleep）
+# ✗ 硬编码 MQTT topic（必须从 MQTT_TOPICS_CONFIG 读取）
+# ✗ 非 main.py 中调用 sys.exit()
+# ✗ 修改 src/ui/ 旧版界面
+# ✗ QSS 动画用 Python 逐帧驱动（必须走 QPropertyAnimation）
+# ✗ QGraphicsDropShadowEffect.blurRadius > 20px
