@@ -154,7 +154,7 @@ class AsyncSSHManager:
                 return False, "请先启动底盘 (Bringup)，建图需要底盘数据"
             
             logging.info("检查激光雷达 /scan 话题...")
-            scan_check_cmd = "timeout 3 ros2 topic echo /scan --once 2>&1 | head -3"
+            scan_check_cmd = "timeout 3 ros2 topic echo /scan --once --qos-reliability best_effort 2>&1 | head -3"
             code_s, out_s, _ = await self._exec_in_container_async(scan_check_cmd, detach=False, timeout=10)
             if "ranges" not in out_s.lower():
                 logging.warning("激光雷达 /scan 话题可能无数据")
@@ -608,30 +608,44 @@ print("✅ 安装完成")
             return False, str(e)
 
     async def start_mqtt_bridge_async(self) -> Tuple[bool, str]:
-        if self.MOCK_MODE:
+        if self.mock_mode:
             await asyncio.sleep(1)
             return True, "[Mock] MQTT 桥接节点已启动"
         await self._connect_async()
         try:
+            logging.info("[MQTT桥接] 步骤 1/5: 清理旧的 MQTT 桥接进程...")
             await self._exec_in_container_async("pkill -9 -f mqtt_bridge_ros2.py || true", detach=False, timeout=8)
             await self._exec_in_container_async("pkill -9 -f run_bridge.sh || true", detach=False, timeout=8)
             await asyncio.sleep(2)
             await self._exec_in_container_async("rm -f /root/mqtt_bridge_ros2.log", detach=False, timeout=5)
+            logging.info("[MQTT桥接] 步骤 1/5: ✅ 旧进程已清理")
             
+            logging.info("[MQTT桥接] 步骤 2/5: 安装 paho-mqtt 依赖到容器中...")
             paho_ok, paho_msg = await self._install_paho_dependency_async()
             if not paho_ok:
                 return False, f"paho-mqtt 安装失败: {paho_msg}"
+            logging.info("[MQTT桥接] 步骤 2/5: ✅ paho-mqtt 依赖就绪")
             
-            mqtt_host = MQTT_CONFIG.get("host", "")
-            mqtt_port = int(MQTT_CONFIG.get("port", 1883))
+            # 动态读取最新配置，防止修改 IP 后仍然使用旧的内存单例
+            from src.core.constants import load_config
+            latest_config = load_config(strict=False)
+            mqtt_conf = latest_config.get("mqtt", {})
+            mqtt_host = mqtt_conf.get("host", "")
+            mqtt_port = int(mqtt_conf.get("port", 1883))
+            
+            if not mqtt_host or mqtt_host == "127.0.0.1":
+                logging.warning("[MQTT桥接] ⚠️ 注意：检测到 MQTT_HOST 是空或 127.0.0.1，如果机器人和控制面板不在同一台电脑，请在设置中修改真实 IP 否则收不到数据！")
             if not mqtt_host:
-                raise RuntimeError("MQTT_CONFIG.host 未配置")
+                raise RuntimeError("MQTT 配置中的 host 为空")
 
+            logging.info(f"[MQTT桥接] 目标 Broker 配置: {mqtt_host}:{mqtt_port}")
+            logging.info("[MQTT桥接] 步骤 3/5: 上传桥接脚本到容器中...")
             cid = await self._ensure_container_id_async()
             await self._exec_in_container_async("rm -f /root/mqtt_bridge_ros2.py /root/run_bridge.sh || true", detach=False, timeout=5)
             
             remote_tmp = await self._upload_bridge_script_async(self.DEFAULT_BRIDGE_LOCAL_PATH)
             await self._copy_into_container_async(remote_tmp, target_path="/root/mqtt_bridge_ros2.py")
+            logging.info("[MQTT桥接] 步骤 3/5: ✅ 桥接脚本已部署")
             
             wrapper_script = f'''#!/bin/bash
 export MQTT_HOST='{mqtt_host}'
@@ -664,30 +678,39 @@ python3 /root/mqtt_bridge_ros2.py >> /root/mqtt_bridge_ros2.log 2>&1
             copy_wrapper_cmd = f"docker cp {wrapper_path} {cid}:{container_wrapper}"
             code_copy, _, err_copy = await self._run_host_async(copy_wrapper_cmd, timeout=10)
             
+            logging.info("[MQTT桥接] 步骤 4/5: 启动 MQTT 桥接进程...")
             cmd = "chmod +x /root/mqtt_bridge_ros2.py /root/run_bridge.sh && nohup bash /root/run_bridge.sh &"
             code, out, err = await self._exec_in_container_async(cmd, detach=False)
             await self._run_host_async(f"rm -f {wrapper_path}", timeout=5)
             
             if code == 0:
+                logging.info("[MQTT桥接] 步骤 5/5: 验证桥接进程状态（等待启动）...")
                 await asyncio.sleep(3)
                 check_cmd = "head -n 30 /root/mqtt_bridge_ros2.log 2>&1 || echo 'No log'"
                 code2, log_out, _ = await self._exec_in_container_async(check_cmd, detach=False, timeout=5)
                 
                 if "RuntimeError" in log_out or "ImportError" in log_out:
+                    logging.error(f"[MQTT桥接] ❌ 桥接脚本运行出错:\n{log_out}")
                     return False, f"MQTT 桥接启动失败: {log_out}"
                 
                 success_markers = ["bridge fully initialized", "bridge started", "subscribed:"]
                 log_lower = log_out.lower()
                 for marker in success_markers:
                     if marker in log_lower:
+                        logging.info("[MQTT桥接] 步骤 5/5: ✅ MQTT 桥接节点启动成功！")
                         return True, "MQTT 桥接节点已启动"
                 
+                # 如果没找到成功标记，但也不是明显的 Python 异常，打出来看看是什么情况
+                logging.warning(f"[桥接诊断] 容器内 mqtt_bridge_ros2.log 输出内容:\n{log_out}")
+
                 await asyncio.sleep(2)
                 proc_check = "pgrep -f mqtt_bridge_ros2.py && echo 'PROCESS_RUNNING'"
                 code3, proc_out, _ = await self._exec_in_container_async(proc_check, detach=False, timeout=5)
                 if "PROCESS_RUNNING" in proc_out:
+                    logging.info(f"[MQTT桥接] 步骤 5/5: ✅ MQTT 桥接节点启动成功（进程运行中）\n[诊断] pgrep 输出: {proc_out.strip()}")
                     return True, "MQTT 桥接节点已启动（进程运行中）"
                 
+                logging.warning("[MQTT桥接] ⚠️ 无法确认桥接进程状态")
                 return False, f"MQTT 桥接启动状态未知: {log_out[:300]}"
             return False, f"MQTT 桥接启动失败: {err or out}"
         except Exception as e:

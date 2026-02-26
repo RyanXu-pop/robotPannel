@@ -66,7 +66,7 @@ try:
     import rclpy
     from rclpy.node import Node
     from rclpy.executors import ExternalShutdownException
-    from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
+    from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy, qos_profile_sensor_data
     from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
     from nav_msgs.msg import Odometry, OccupancyGrid, Path
     from sensor_msgs.msg import LaserScan
@@ -79,6 +79,7 @@ except Exception:
     QoSDurabilityPolicy = object
     QoSReliabilityPolicy = object
     QoSHistoryPolicy = object
+    qos_profile_sensor_data = object
     PoseStamped = object
     PoseWithCovarianceStamped = object
     Twist = object
@@ -231,7 +232,7 @@ class Ros2MqttBridge(Node):
         # /scan - 激光雷达数据
         try:
             self.sub_scan = self.create_subscription(
-                LaserScan, ROS_TOPICS["scan"], self._on_scan, 10)
+                LaserScan, ROS_TOPICS["scan"], self._on_scan, qos_profile_sensor_data)
             self.get_logger().info(f"  ✅ {ROS_TOPICS['scan']} (LaserScan) - 激光雷达")
         except Exception as e:
             self.get_logger().warn(f"  ⚠️ {ROS_TOPICS['scan']} 订阅失败（可选）: {e}")
@@ -260,7 +261,10 @@ class Ros2MqttBridge(Node):
         self.client.on_disconnect = self._on_mqtt_disconnect
 
         try:
-            self.client.connect(self.mqtt_host, self.mqtt_port, 60)
+            # 这里的 connect 会阻塞。如果不通，默认会卡很久
+            self.get_logger().info(f"  ⏳ 正在向 {self.mqtt_host}:{self.mqtt_port} 发起 socket 连接 (如卡住请检查 Windows 防火墙或 IP 是否互通)...")
+            # 缩短 keepalive 只是心跳，真正的连接超时依赖系统的 tcp_syn_retries
+            self.client.connect(self.mqtt_host, self.mqtt_port, keepalive=60)
             self._mqtt_thread = threading.Thread(target=self.client.loop_forever, daemon=True)
             self._mqtt_thread.start()
             self.get_logger().info(f"  ✅ MQTT 连接成功: {self.mqtt_host}:{self.mqtt_port}")

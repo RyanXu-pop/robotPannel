@@ -169,6 +169,11 @@ class LidarLayer(QGraphicsObject):
             py = robot_y + r * math.sin(angle)
             self.points.append(QPointF(px, py))
             
+        import logging
+        if len(self.points) > 0 and getattr(self, '_log_counter', 0) % 20 == 0:
+            logging.info(f"[诊断 UI] 成功重绘雷达点云，包含 {len(self.points)} 个有效点")
+        self._log_counter = getattr(self, '_log_counter', 0) + 1
+            
         self.update()
 
     def boundingRect(self) -> QRectF:

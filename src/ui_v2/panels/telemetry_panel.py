@@ -95,8 +95,9 @@ class TelemetryPanel(QWidget):
             self.status_label.setText("底盘在线")
         else:
             self.indicator_circle.setStyleSheet("color: #f14c4c; font-size: 16px;")
-            self.status_label.setText("连接断开")
-            self.volt_label.setText("N/A")
+            self.status_label.setText("底盘离线")
+            # 移除这里的 self.volt_label.setText("N/A")，让电压显示和底盘在线状态解耦
+            # 因为即使底盘程序判断"不在线"(未收到 odom)，仍可能会有电压数据到来
 
     def _on_voltage_changed(self, voltage: float, percent: float):
         color = "#3fb950" if voltage >= 24.0 else ("#f14c4c" if voltage <= 20.0 else "#d29922")

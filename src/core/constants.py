@@ -5,6 +5,8 @@ import sys
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 抑制 paramiko 的底层日志（如 sftp session opened/closed），只保留 WARNING 及以上
+logging.getLogger("paramiko").setLevel(logging.WARNING)
 
 def load_config(path: str = 'config/config.yaml', strict: bool = True) -> dict:
     """

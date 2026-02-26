@@ -169,6 +169,16 @@ class WorkflowController(QObject):
         """停止导航工作流"""
         await self.stop_service_async("navigation")
 
+    async def execute_chassis_workflow(self):
+        """执行启动底盘工作流"""
+        await self.start_service_async("chassis")
+
+    async def execute_mqtt_workflow(self):
+        """执行启动 MQTT 桥接节点工作流"""
+        await self.start_service_async("chassis")
+        await asyncio.sleep(1)
+        await self.start_service_async("mqtt")
+
     async def execute_save_map_workflow(self):
         """执行保存并拉取最新地图工作流"""
         from src.core.constants import PATHS_CONFIG

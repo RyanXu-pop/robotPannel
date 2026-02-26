@@ -106,6 +106,23 @@ class MqttAgent(QObject):
             logging.error(f"[MQTT] 连接失败: {e}")
             self.connection_status.emit(False, f"MQTT 连接失败: {e}")
 
+    def update_connection(self, host: str, port: int):
+        """更新连接地址并重新连接"""
+        if self.host == host and self.port == port:
+            return
+            
+        logging.info(f"[MQTT] 正在更新连接: {self.host}:{self.port} -> {host}:{port}")
+        self.host = host
+        self.port = port
+        
+        # 停止旧连接
+        self.client.loop_stop()
+        if self.is_connected:
+            self.client.disconnect()
+            
+        # 尝试使用新配置重连
+        self.connect_broker()
+
 
     def publish(self, topic_key: str, payload: dict) -> bool:
         """
@@ -164,6 +181,7 @@ class MqttAgent(QObject):
 
         elif topic == self.topics.get('status'):
             # 新的状态消息：{"chassis_alive": bool, "voltage": float}
+            # logging.info(f"[诊断 MQTT] 收到 status 原始 Payload: {payload}")
             if isinstance(parsed, dict):
                 # 发送完整状态信号
                 self.status_updated.emit(parsed)
@@ -176,9 +194,8 @@ class MqttAgent(QObject):
                         try:
                             voltage = float(parsed['voltage'])
                             self.voltage_updated.emit(voltage)
-                            # 高频打印降低级别或移除
                         except (ValueError, TypeError) as e:
-                            self.error_aggregator.report_error(f"电压值格式错误", f"值: {parsed['voltage']}, {e}")
+                            self.error_aggregator.report_error("电压值格式错误", f"值: {parsed['voltage']}, {e}")
                     else:
                         logging.debug("[MQTT] 电压值为 None（可能未收到 /battery 消息）")
         elif topic == self.topics.get('voltage'):

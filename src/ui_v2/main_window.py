@@ -203,15 +203,15 @@ class MyMainWindow(QMainWindow):
         
         def safely_update_robot(pose):
             if pose:
-                self.map_view.update_robot_pose(pose.x, pose.y, pose.angle)
+                self.map_view.update_robot_pose(pose.x, pose.y, pose.yaw)
                 if self.pose_recorder.recording:
-                    self.pose_recorder.append(pose.x, pose.y, 0.0, pose.angle)
+                    self.pose_recorder.append(pose.x, pose.y, 0.0, pose.yaw)
         self.store.robot_pose_changed.connect(safely_update_robot)
         
         def safely_update_scan(scan_dict):
             pose = self.store.current_pose
             if pose is not None and scan_dict:
-                self.map_view.update_scan(scan_dict, pose.x, pose.y, pose.angle)
+                self.map_view.update_scan(scan_dict, pose.x, pose.y, pose.yaw)
         self.store.laser_scan_changed.connect(safely_update_scan)
 
         # ================== Unified Drawer Animations ==================
@@ -247,6 +247,16 @@ class MyMainWindow(QMainWindow):
         self.pose_recorder.status_message.connect(lambda msg: logging.info(f"[PoseRecorder] {msg}"))
         
         # ================== UI Intents -> Controllers ==================
+        # 接收并显示系统级全局通知
+        def show_popup(msg):
+            # Only pop up for final results, not intermediate "正在..." steps
+            if "成功" in msg or "失败" in msg or "完成" in msg:
+                QMessageBox.information(self, "系统提示", msg)
+            else:
+                self.statusBar().showMessage(msg, 3000)
+                
+        self.store.workflow_message.connect(show_popup)
+        
         # 建图开关
         self.control_panel.sig_start_mapping.connect(self._do_start_mapping)
         self.control_panel.sig_stop_mapping.connect(self._do_stop_mapping)
@@ -493,7 +503,7 @@ class MyMainWindow(QMainWindow):
     # ---------------- Odom (建图模式) ----------------
     def _on_odom_data(self, pose):
         if self.store.mapping_running and pose:
-            self.map_view.update_robot_pose(pose.x, pose.y, pose.angle)
+            self.store.update_robot_pose(pose)
 
     # ---------------- 键盘遥控 (WASD) ----------------
     def keyPressEvent(self, event):
