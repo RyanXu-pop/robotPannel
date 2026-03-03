@@ -25,6 +25,9 @@ maps/*.pgm
 # Excel 记录
 *.xlsx
 
+# Workflow Manager 任务数据（本地状态）
+.tasks.json
+
 # IDE
 .vscode/
 .idea/

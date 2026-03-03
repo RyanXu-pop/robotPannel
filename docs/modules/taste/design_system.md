@@ -149,4 +149,11 @@ GLASS_ANIMATIONS = {
 
 ---
 
+## 延伸阅读
+
+- [apple_design_spec.md](apple_design_spec.md) — macOS 应用设计规范 (2026 版)，含 Ive/Jobs 设计哲学、完整组件规范和布局交互指南
+- [design_principles.md](design_principles.md) — 品味原则，设计审查问题清单
+
+---
+
 *本文档是设计师 Agent 输出视觉方案时的参数基准。所有 rgba、px、ms 值以此为准。*

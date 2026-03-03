@@ -70,7 +70,7 @@ flowchart TD
 | `.cursorrules` | 长期 AI 规则（架构/编码/禁止事项） | 跨 Sprint 稳定 |
 | `.sprint` | 当前 Sprint 约束（修改范围/冻结区/专项 DoD） | 随 Sprint 更新 |
 | `docs/modules/architecture/` | 架构 Agent 管辖（冻结后端、信号契约） | 架构变更时更新 |
-| `docs/modules/taste/` | 设计 Agent 管辖（品味原则、设计系统） | 设计语言变更时更新 |
+| `docs/modules/taste/` | 设计 Agent 管辖（品味原则、设计系统、Apple 设计规范） | 设计语言变更时更新 |
 
 > `workflow/` = **怎么做**（通用方法论）
 > `docs/modules/` = **做什么**（项目知识）

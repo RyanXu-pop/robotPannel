@@ -86,4 +86,11 @@
 
 ---
 
+## 延伸阅读
+
+- [apple_design_spec.md](apple_design_spec.md) — macOS 应用设计规范 (2026 版)，含更细粒度的原则阐释、视觉参数、组件规范和最佳实践
+- [design_system.md](design_system.md) — 本项目的 Liquid Glass 视觉参数唯一真相源
+
+---
+
 *品味不是主观偏好，而是对用户注意力的尊重。*
