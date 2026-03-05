@@ -1,23 +1,25 @@
 # ============================================================
 # .sprint — 当前 Sprint 约束（时效性文件，随 Sprint 切换而更新）
 # ============================================================
-# Sprint：UI Liquid Glass 升级
-# 生效日期：2026-02-26
-# 到期条件：所有面板完成 Liquid Glass 视觉升级
+# Sprint：V3 UI 全面重设计
+# 生效日期：2026-03-04
+# 到期条件：V3 UI 全部实现，功能验证通过
 
 # ==================== Sprint 目标 ====================
-# 将 UI 从 VSCode Dark 扁平风格升级为 2026 Liquid Glass 毛玻璃美学。
-# 只改视觉层，后端功能已验证稳定，作为冻结边界。
+# 以设计师全权负责的方式，将 UI 从 V2 扁平风格完全重写为 V3。
+# V3 核心：地图全幅 + 模式驱动控制面板 + 状态栏常驻 + Liquid Glass 美学。
+# 后端功能必须与 V2 完全一致，零业务侵入。
 
 # ==================== 修改范围（白名单） ====================
 # 只有以下文件/范围允许修改：
 #
-#   src/ui_v2/theme.py              → Liquid Glass 色盘 + 全局 QSS
-#   src/ui_v2/panels/*.py           → 布局/QSS/动画/阴影效果
-#   src/ui_v2/panels/unified_drawer.py → 展开动画/视觉效果
-#   src/ui_v2/map/map_view.py       → 渲染样式（不改交互逻辑）
+#   src/ui_v2/theme.py              → 全新 V3 色盘 + Glass 预设 + QSS
+#   src/ui_v2/panels/*.py           → 控制面板重写为模式驱动 + Glass 化
+#   src/ui_v2/panels/unified_drawer.py → 可能被移除或重构
+#   src/ui_v2/map/map_view.py       → 渲染样式优化
 #   src/ui_v2/map/layers.py         → 渲染颜色/线宽/点大小
-#   src/ui_v2/main_window.py        → 布局/QSS（不改 _bind_signals/_do_xxx）
+#   src/ui_v2/main_window.py        → 布局重写（四区浮动）不改 _bind_signals/_do_xxx
+#   docs/modules/taste/*.md         → 设计规范更新
 
 # ==================== 冻结区（黑名单） ====================
 # 以下区域本 Sprint 不可修改，详细 API 见 docs/modules/architecture/frozen_backend.md
@@ -35,17 +37,20 @@
 # ✗ 禁止修改任何 .connect() 信号连接
 # ✗ 禁止修改任何 objectName 设置
 # ✗ 禁止修改 Controller/Network/Store/Models 的任何代码
+# ✗ 禁止删除任何现有 Signal 定义
 #
 # 详细 Signal 契约 → docs/modules/architecture/ui_signals.md
 
 # ==================== Sprint DoD（附加检查项） ====================
 # 以下为本 Sprint 的额外验收标准，叠加在 .cursorrules 的通用 DoD 之上：
 #
-# □ Liquid Glass 合规：视觉参数符合 docs/modules/taste/design_system.md
-# □ 微物理反馈：交互元素有 0.2s ease-in-out 过渡动画
-# □ Apple HIG：符合 docs/modules/taste/design_principles.md 三原则
-# □ E-Stop 可见：急停按钮在任何视图下醒目可点击
+# □ V3 布局：四区浮动布局（状态栏/控制面板/快捷提示/浮动按钮）
+# □ 模式驱动：控制面板随 IDLE/MAPPING/NAVIGATING 自动切换显示内容
+# □ Glass 合规：视觉参数符合 docs/modules/taste/design_system.md V3 版
+# □ 信息层级：生命体征（连接/电压）常驻状态栏，永不折叠
+# □ E-Stop 宪法：急停按钮在任何视图下醒目可点击，≥48×48pt
 # □ 零业务侵入：git diff 中业务代码零修改
+# □ 功能完整：所有 22 个 Signal 正常工作，建图/导航/遥控流程不受影响
 # □ 性能达标：实时数据刷新 FPS >= 30
 
 # ==================== Sprint 验证命令 ====================

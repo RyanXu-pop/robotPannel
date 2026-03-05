@@ -37,6 +37,7 @@ flowchart TD
 
 | 文件 | 用途 | 何时使用 |
 |------|------|----------|
+| [00_quick_start.md](00_quick_start.md) | **Agent 驱动快速上手** | **每天开工前看一眼** |
 | [01_project_context_template.md](01_project_context_template.md) | 项目上下文填写模板 | 新项目初始化时填写 |
 | [02_architect_prompt_template.md](02_architect_prompt_template.md) | 架构师 Agent Prompt 模板 | 向架构师提需求时复制使用 |
 | [03_designer_prompt_template.md](03_designer_prompt_template.md) | 设计师 Agent Prompt 模板 | 架构师蓝图完成后，**仅 UI 任务** |
